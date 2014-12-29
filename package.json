@@ -1,0 +1,13 @@
+{
+  "name": "ieee1888",
+  "version": "0.0.0",
+  "description": "A node module for IEEE1888 protocol",
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "author": {
+    "name": "Shih Jia-Cheng",
+    "email": "dsxsxsxs@gmail.com"
+  },
+  "main": "./index.js"
+}
