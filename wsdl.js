@@ -7,15 +7,15 @@
 
 "use strict";
 
-var sax = require('sax');
+var sax = require('./node_modules/soap/sax');
 var inherits = require('util').inherits;
 var http = require('./http');
 var fs = require('fs');
 var url = require('url');
 var path = require('path');
 var assert = require('assert').ok;
-var stripBom = require('strip-bom');
-var _ = require('lodash');
+var stripBom = require('./node_modules/soap/node_modules/strip-bom');
+var _ = require('./node_modules/soap/node_modules/lodash');
 
 var Primitives = {
   string: 1,
@@ -74,12 +74,12 @@ function trim(text) {
 }
 
 /**
- * What we want is to copy properties from one object to another one and avoid 
- * properties overriding. This way we ensure the 'inheritance' of 
+ * What we want is to copy properties from one object to another one and avoid
+ * properties overriding. This way we ensure the 'inheritance' of
  * <xsd:extension base=...> usage.
  *
- * NB: 'Element' (and subtypes) don't have any prototyped properties: there's 
- * no need to process a 'hasOwnProperties' call, we should just iterate over the 
+ * NB: 'Element' (and subtypes) don't have any prototyped properties: there's
+ * no need to process a 'hasOwnProperties' call, we should just iterate over the
  * keys.
  */
 function extend(base, obj) {
@@ -1127,7 +1127,7 @@ WSDL.prototype.describeServices = function() {
 
 /**
  * Returns true if a schema namespace needs to be ignored.
- * 
+ *
  * @method shouldIgnoreNamespace
  * @param {Object} schema   The parsed WSDL Schema object.
  */
@@ -1451,7 +1451,7 @@ WSDL.prototype.objectToXML = function(obj, name, namespace, xmlns, first, xmlnsA
   }
 
   var ancXmlns = ancestorXmlns ? ancestorXmlns : new Array(xmlns);
-  
+
   // explicitly use xmlns attribute if available
   if (xmlnsAttr) {
     xmlnsAttrib = xmlnsAttr;
@@ -1462,7 +1462,8 @@ WSDL.prototype.objectToXML = function(obj, name, namespace, xmlns, first, xmlnsA
     // prefix element
     ns = namespace.indexOf(":") === -1 ? namespace + ':' : namespace;
   }
-
+    // dsxs
+    ns='s0';
   if (Array.isArray(obj)) {
     for (var i = 0, item; item = obj[i]; i++) {
       var arrayAttr = self.processAttributes(item),
@@ -1506,7 +1507,7 @@ WSDL.prototype.objectToXML = function(obj, name, namespace, xmlns, first, xmlnsA
               if(childParameterTypeObject.$baseNameSpace) { //this element has a base with another namespace (the correct one)
                 ns = childParameterTypeObject.$baseNameSpace + ':';
               }
-              
+
               var childParameterType = childParameterTypeObject.$type;
 
               var childNamespace = '';
