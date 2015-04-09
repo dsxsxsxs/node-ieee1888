@@ -7,9 +7,9 @@
 
 "use strict";
 
-var sax = require('./node_modules/soap/sax');
+var sax = require('./node_modules/soap/node_modules/sax');
 var inherits = require('util').inherits;
-var http = require('./http');
+var http = require('./node_modules/soap/lib/http.js');
 var fs = require('fs');
 var url = require('url');
 var path = require('path');
@@ -28,6 +28,10 @@ var Primitives = {
   int: 1,
   long: 1,
   short: 1,
+  negativeInteger: 1,
+  nonNegativeInteger: 1,
+  positiveInteger: 1,
+  nonPositiveInteger:1,
   unsignedByte: 1,
   unsignedInt: 1,
   unsignedLong: 1,
@@ -477,6 +481,10 @@ MessageElement.prototype.postProcess = function(definitions) {
     ns = nsName.namespace;
     var schema = definitions.schemas[definitions.xmlns[ns]];
     this.element = schema.elements[nsName.name];
+    if(!this.element) {
+      console.log(nsName.name + " is not present in wsdl and cannot be processed correctly.");
+      return;
+    }
     this.element.targetNSAlias = ns;
     this.element.targetNamespace = definitions.xmlns[ns];
 
@@ -557,8 +565,12 @@ MessageElement.prototype.postProcess = function(definitions) {
       } else {
         this.parts[part.$name] = part.$type;
       }
-      this.parts[part.$name].namespace = nsName.namespace;
-      this.parts[part.$name].xmlns = ns;
+
+      if (typeof this.parts[part.$name] === 'object') {
+        this.parts[part.$name].namespace = nsName.namespace;
+        this.parts[part.$name].xmlns = ns;
+      }
+
       this.children.splice(i--, 1);
     }
   }
@@ -861,8 +873,11 @@ ElementElement.prototype.description = function(definitions, xmlns) {
         else {
           elem = element[name] = typeElement.description(definitions, xmlns);
         }
-        elem.targetNSAlias = type.namespace;
-        elem.targetNamespace = ns;
+
+        if (typeof elem === 'object') {
+          elem.targetNSAlias = type.namespace;
+          elem.targetNamespace = ns;
+        }
 
         definitions.descriptions.types[typeName] = elem;
       }
@@ -1307,6 +1322,24 @@ WSDL.prototype.xmlToObject = function(xml) {
     }
   };
 
+  p.oncdata = function (text) {
+    text = trim(text);
+    if (!text.length)
+      return;
+
+    if (/<\?xml[\s\S]+\?>/.test(text)) {
+      var top = stack[stack.length - 1];
+      var value = self.xmlToObject(text);
+      if (top.object[self.options.attributesKey]) {
+        top.object[self.options.valueKey] = value;
+      } else {
+        top.object = value;
+      }
+    } else {
+      p.ontext(text);
+    }
+  };
+
   p.ontext = function(text) {
     text = trim(text);
     if (!text.length)
@@ -1354,16 +1387,18 @@ WSDL.prototype.xmlToObject = function(xml) {
     for (var i = 0; i < ref.hrefs.length; i++) {
       merge(ref.hrefs[i], ref.obj);
     }
-
   }
 
-  var body = root.Envelope.Body;
-  if (body.Fault) {
-    var error = new Error(body.Fault.faultcode + ': ' + body.Fault.faultstring + (body.Fault.detail ? ': ' + body.Fault.detail : ''));
-    error.root = root;
-    throw error;
+  if (root.Envelope) {
+    var body = root.Envelope.Body;
+    if (body.Fault) {
+      var error = new Error(body.Fault.faultcode + ': ' + body.Fault.faultstring + (body.Fault.detail ? ': ' + body.Fault.detail : ''));
+      error.root = root;
+      throw error;
+    }
+    return root.Envelope;
   }
-  return root.Envelope;
+  return root;
 };
 
 WSDL.prototype.findParameterObject = function(xmlns, parameterType) {
@@ -1462,8 +1497,9 @@ WSDL.prototype.objectToXML = function(obj, name, namespace, xmlns, first, xmlnsA
     // prefix element
     ns = namespace.indexOf(":") === -1 ? namespace + ':' : namespace;
   }
-    // dsxs
-    ns='s0';
+  // dsxs override
+  ns='s0:';
+  // dsxs override
   if (Array.isArray(obj)) {
     for (var i = 0, item; item = obj[i]; i++) {
       var arrayAttr = self.processAttributes(item),

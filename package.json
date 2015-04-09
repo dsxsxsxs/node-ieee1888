@@ -1,6 +1,6 @@
 {
   "name": "ieee1888",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A node module for IEEE1888 protocol",
   "engines": {
     "node": ">=0.8.0"
@@ -9,5 +9,16 @@
     "name": "Shih Jia-Cheng",
     "email": "dsxsxsxs@gmail.com"
   },
+  "dependencies": {
+    "soap": "=0.8.0",
+    "node-uuid": ">=1.4.2",
+    "moment": ">=2.9.0"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://raw.github.com/dsxsxsxs/node-ieee1888/master/license.md"
+    }
+  ],
   "main": "./index.js"
 }

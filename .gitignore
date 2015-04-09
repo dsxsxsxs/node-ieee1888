@@ -1,3 +1,5 @@
 node_modules
 .remote-sync.json
 npm-debug.log
+easysoap.js
+.npmignore

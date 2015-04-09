@@ -1,7 +1,10 @@
 var soap=require("./soap.js");
 var uuid=require("node-uuid");
+var moment=require("moment");
 var pointID_prefix;
+
 function newTransport(points){
+  points.forEach(function(e,i){points[i]=e.raw();});
     return {
         "transport":{
             "body": {
@@ -15,7 +18,6 @@ function newTransport(points){
         }
     };
 }
-
 // soap.createClient('http://fiap.dsxs.me/axis2/services/FIAPStorage?wsdl', function(err, client) {
 //     client.data(dataRQ, function(err, rs){
 //         if (err)console.log("ERR: ", typeof err, err.root.Envelope.Body.Fault);
@@ -45,31 +47,47 @@ function newKey(id, attr){
     }
 }
 
-function newPoint(id, value, time){
-
-    return {
+function Point(id, value, time){
+  if (!this instanceof Point) return new Point(id, value, time);
+    var point={
         "attributes": {
             "id": pointID_prefix+id
         },
         "value": {
             "attributes": {
-                "time": time
+                "time": time || moment().format()
             },
             "$value": value
         }
     };
-
+    this.raw=function(){
+        return point;
+    };
 }
 
-function ieee1888(url, prefix){
-    if (!this instanceof ieee1888) return new ieee1888(url, prefix);
+function Client(url, prefix){
+    if (!this instanceof Client) return new Client(url, prefix);
     pointID_prefix=prefix;
-    this.write=function(data, cb){
-        soap.createClient(url, function(err, client){
-        if (err)cb(err, client);
-        client.data(data, cb);
+    var self=this;
+    var soapClient;
+    soap.createClient(url, function(err, client){
+        if (err)console.error(err);
+        soapClient=client;
+        self.soapClient=soapClient;
+        self.write==function(points, cb){
+          soapClient.data(newTransport(points), cb);
+        };
+        self.fetch==function(data, cb){
+          soapClient.query(data, cb);
+        };
+        emitter.emit('connection', client);
     });
-    }
+    this.write=function(points, cb){
+        soap.createClient(url, function(err, client){
+            if (err)cb(err, client);
+            client.data(newTransport(points), cb);
+        });
+    };
     this.fetch=function(data, cb){
         soap.createClient(url, function(err, client){
             if (err)cb(err, client);
@@ -79,12 +97,12 @@ function ieee1888(url, prefix){
                 }
             }, cb);
         });
-    }
-    this.point=newPoint;
-    this.transport=newTransport;
-    this.query=newQuery;
-    this.key=newKey;
+    };
 }
 
 
-module.exports=ieee1888;
+module.exports={
+  Client: Client,
+  Point: Point,
+  moment: moment
+};
