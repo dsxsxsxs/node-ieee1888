@@ -1,21 +1,46 @@
-node module for ieee1888 write.
+node module for ieee1888 write and fetch.
 
 #Sample code
 
 ```javascript
 
 var ieee1888=require('ieee1888');
-var moment=require('moment');
 
-var i18 = new ieee1888('http://sample.org/axis2/services/FIAPStorage?wsdl', 'point_id_prefix');
+var client = new ieee1888.Client('http://sample.org/axis2/services/FIAPStorage?wsdl', 'point_id_prefix');
 
-var rh=new i18.point("Humidity", 99.99, moment().format());
-var tmp=new i18.point("Temperature", 26.00, moment().format());
+// using current time
+var rh=new ieee1888.Point("Humidity", 99.99);
+// using custom time
+var tmp=new ieee1888.Point("Temperature", 26.00, ieee1888.moment());
+
+// ieee1888 write
 var points=[rh, tmp];
-var data=new i18.transport(points);
-i18.data(data, function(err, rs){
+client.write(points, function(err, rs){
     if (err) console.error(err);
     console.log(rs);
 });
+// fetch latest
+client.latest(["Humidity", "Temperature"], function(err, rs){
+  if (err) console.error(err);
+  console.log(rs);
+});
+
+// fetch all
+client.fetch(
+    ["Humidity", "Temperature"],
+  function(err, rs){
+    if (err) console.error(err);
+    console.log(rs);
+});
+
+// fetch by time
+client.fetch(
+    ["Humidity", "Temperature"],
+    [ieee1888.moment("2015-04-14"), ieee1888.moment()],
+  function(err, rs){
+    if (err) console.error(err);
+    console.log(rs);
+});
+
 
 ```
