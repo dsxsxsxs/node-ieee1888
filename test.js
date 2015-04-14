@@ -23,8 +23,15 @@ var points=[rh, tmp];
 //     console.log(rs);
 // });
 setInterval(function(){
-  client.latest(["Humidity", "Temperature"], function(err, rs){
-    // if (err) console.error(err);
-    console.log(rs);
+  // client.latest(["Humidity"], function(err, rs){
+  //   // if (err) console.error(err);
+  //   console.log(rs);
+  // });
+  client.fetch(
+      ["Humidity"],
+      [ieee1888.moment("2015-04-14"), ieee1888.moment()],
+    function(err, rs){
+      // if (err) console.error(err);
+      console.log(rs);
   });
 }, 1000);

@@ -45,8 +45,14 @@ function makeResult(err, rs, cb){
   if (err)cb(err, rs);
   else{
     var points=rs.transport.body.point;
+    if (_.isArray(points))
+      points=_.groupBy(points, function(n){return n.attributes.id;});
+    else {
+      var newPoints={};
+      newPoints[points.attributes.id]=[{value:points.value}];
+      points=newPoints;
+    }
 
-    points=_.groupBy(points, function(n){return n.attributes.id;});
     _.forEach(points, function(n, key){
         if (_.isArray(n[0].value))
           points[key]= _.map(n[0].value, function(m){
