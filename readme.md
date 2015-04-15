@@ -1,9 +1,7 @@
 node module for ieee1888 write and fetch.
 #installation
 ```
-
 npm install ieee1888
-
 ```
 
 #Sample code
@@ -42,7 +40,7 @@ client.fetch(
 // fetch by time
 client.fetch(
     ["Humidity", "Temperature"],
-    [ieee1888.moment("2015-04-14"), ieee1888.moment()],
+    [ieee1888.moment("date string"), ieee1888.moment()],
   function(err, rs){
     if (err) console.error(err);
     console.log(rs);
