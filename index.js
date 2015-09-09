@@ -44,6 +44,12 @@ function newKey(id, attr){
 }
 function makeResult(err, rs, cb){
   if (err)cb(err, rs);
+  else if(rs.transport.header["error"]!==undefined){
+    cb({
+      type: rs.transport.header.error.attributes.type,
+      content: rs.transport.header.error.$value
+    }, rs);
+  }
   else{
     var points=rs.transport.body.point;
     if (_.isArray(points))
