@@ -1,5 +1,5 @@
 var ieee1888=require('./index.js');
-var client = new ieee1888.Client('http://192.168.1.112/axis2/services/FIAPStorage?wsdl', 'http://fiap.dsxs.me/test/');
+var client = new ieee1888.Client('http://fiap.dsxs.me/axis2/services/FIAPStorage?wsdl', 'http://fiap.dsxs.me/test/');
 // client.on('connection', function(client){
 //   console.log('connected');
 // });
@@ -23,15 +23,19 @@ var points=[rh, tmp];
 //     console.log(rs);
 // });
 setInterval(function(){
-  // client.latest(["Humidity"], function(err, rs){
-  //   // if (err) console.error(err);
-  //   console.log(rs);
-  // });
-  client.fetch(
-      ["Humidity"],
-      [ieee1888.moment("2015-04-14"), ieee1888.moment()],
-    function(err, rs){
-      // if (err) console.error(err);
-      console.log(rs);
+  client.latest(["Humidity"], function(err, rs){
+    // if (err) console.error(err);
+    console.log(rs);
   });
+  // client.fetch(
+  //     ["Humidity"],
+  //     [ieee1888.moment("2015-04-14"), ieee1888.moment()],
+  //   function(err, rs){
+  //     if (err) console.error(err);
+  //     console.log(rs);
+  // });
+  // client.write(points, function(err, rs){
+  //     if (err) console.error(err);
+  //     console.log(rs);
+  // });
 }, 1000);

@@ -5,7 +5,8 @@ var _=require("./node_modules/soap/node_modules/lodash/");
 var pointID_prefix;
 
 function newTransport(points){
-  points.forEach(function(e,i){points[i]=e.raw();});
+  var _points=_.clone(points);
+  _points.forEach(function(e,i){_points[i]=e.raw();});
     return {
         "transport":{
             "body": {
@@ -13,7 +14,7 @@ function newTransport(points){
                     "attributes": {
                         "id": pointID_prefix
                     },
-    				"point" : points
+    				"point" : _points
                 }
             }
         }
@@ -117,39 +118,44 @@ function Client(url, prefix){
     pointID_prefix=prefix;
     var self=this;
     var soapClient;
-
-    this.write=function(points, cb){
+    var _write=function(points, cb){
         soap.createClient(url, function(err, client){
             if (err)cb(err, client);
-            client.data(newTransport(points), cb);
+            else client.data(newTransport(points), cb);
         });
     };
     var _fetch=function(data, cb){
         soap.createClient(url, function(err, client){
             if (err)cb(err, client);
-
-            client.query({
+            else client.query({
                 transport: {
                     header: data
                 }
             }, function(err, rs){makeResult(err, rs, cb);});
         });
     };
-    soap.createClient(url, function(err, client){
-        if (err)console.error(err);
-        soapClient=client;
-        self.soapClient=soapClient;
-        self.write==function(points, cb){
-          soapClient.data(newTransport(points), cb);
-        };
-        _fetch==function(data, cb){
-          client.query({
-              transport: {
-                  header: data
-              }
-          }, function(err, rs){makeResult(err, rs, cb);});
-        };
-    });
+    var init=function(){
+      soap.createClient(url, function(err, client){
+          if (err){
+            console.error(err);
+          }else {
+            soapClient=client;
+            _write=function(points, cb){
+              if (soapClient["data"]!==undefined)
+                soapClient.data(newTransport(points), cb);
+            };
+            _fetch=function(data, cb){
+              if (soapClient["query"]!==undefined)
+                soapClient.query({
+                    transport: {
+                        header: data
+                    }
+                }, function(err, rs){makeResult(err, rs, cb);});
+            };
+          }
+      });
+    };
+    this.write=_write;
     this.latest=function(ids, cb){
       _fetch(latest(ids), cb);
     };
@@ -158,6 +164,7 @@ function Client(url, prefix){
         _fetch(queryByTime(ids, time), cb);
       else _fetch(queryByTime(ids), time);
     };
+    init();
 }
 
 
