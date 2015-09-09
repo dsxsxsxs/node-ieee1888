@@ -52,6 +52,7 @@ function makeResult(err, rs, cb){
   }
   else{
     var points=rs.transport.body.point;
+
     if (_.isArray(points))
       points=_.groupBy(points, function(n){return n.attributes.id;});
     else {
@@ -59,7 +60,6 @@ function makeResult(err, rs, cb){
       newPoints[points.attributes.id]=[{value:points.value}];
       points=newPoints;
     }
-
     _.forEach(points, function(n, key){
         if (_.isArray(n[0].value))
           points[key]= _.map(n[0].value, function(m){
@@ -68,13 +68,16 @@ function makeResult(err, rs, cb){
               time: m.attributes.time
             }
           });
+        else if(_.isUndefined(n[0].value)){
+          points[key]=undefined;
+        }
         else
-        points[key]= _.map(n, function(m){
-          return {
-            value: m.value.$value,
-            time: m.value.attributes.time
-          }
-        });
+          points[key]= _.map(n, function(m){
+            return {
+              value: m.value.$value,
+              time: m.value.attributes.time
+            }
+          });
 
 
     });
