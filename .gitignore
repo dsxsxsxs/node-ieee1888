@@ -3,3 +3,4 @@ node_modules
 npm-debug.log
 easysoap.js
 .npmignore
+test.js
