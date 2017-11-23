@@ -1,126 +1,10 @@
-var soap=require("soap");
-var uuid=require("uuid/v4");
-var moment=require("moment");
-var _=require("lodash");
-var pointID_prefix;
+const soap = require("soap");
+const uuid = require("uuid/v4");
+const moment = require("moment");
+const _ = require("lodash");
+const util = require('util')
 
-function newTransport(points){
-  var _points=_.clone(points);
-  _points.forEach(function(e,i){_points[i]=e.raw();});
-    return {
-        "transport":{
-            "body": {
-                "pointSet": {
-                    "attributes": {
-                        "id": pointID_prefix
-                    },
-    				"point" : _points
-                }
-            }
-        }
-    };
-}
-
-function Query(){
-    var query={
-        "attributes": {
-            "id": uuid(),
-            "type": "storage"
-        },
-        "key": []
-    };
-    this.push=function(key){
-        query.key.push(key);
-    };
-    this.raw=function(){
-        return {"query": query};
-    }
-}
-function newKey(id, attr){
-    attr["id"]=pointID_prefix+id;
-    return {
-        "attributes": attr
-    }
-}
-function makeResult(err, rs, cb){
-  if (err)cb(err, rs);
-  else if(rs.transport.header["error"]!==undefined){
-    cb({
-      type: rs.transport.header.error.attributes.type,
-      content: rs.transport.header.error.$value
-    }, rs);
-  }
-  else{
-    var points=rs.transport.body.point;
-
-    if (_.isArray(points))
-      points=_.groupBy(points, function(n){return n.attributes.id;});
-    else {
-      var newPoints={};
-      newPoints[points.attributes.id]=[{value:points.value}];
-      points=newPoints;
-    }
-    _.forEach(points, function(n, key){
-        if (_.isArray(n[0].value))
-          points[key]= _.map(n[0].value, function(m){
-            return {
-              value: m.$value,
-              time: m.attributes.time
-            }
-          });
-        else if(_.isUndefined(n[0].value)){
-          points[key]=undefined;
-        }
-        else
-          points[key]= _.map(n, function(m){
-            return {
-              value: m.value.$value,
-              time: m.value.attributes.time
-            }
-          });
-
-
-    });
-    cb(err, points);
-  }
-}
-
-function latest(ids){
-  var query=new Query;
-  for (var i=0; i<ids.length; ++i)
-    query.push(newKey(ids[i], {attrName: "time", select: "maximum"}));
-  return query.raw();
-}
-function queryByTime(ids, time){
-  var query=new Query;
-  for (var i=0; i<ids.length; ++i){
-    var attr = {attrName: "time"};
-    if (time){
-      attr.gteq=time[0].format();
-      attr.lteq=time[1].format();
-    }
-    query.push(newKey(ids[i], attr));
-  }
-  return query.raw();
-}
-function Point(id, value, time){
-  if (!this instanceof Point) return new Point(id, value, time);
-    var point={
-        "attributes": {
-            "id": pointID_prefix+id
-        },
-        "value": {
-            "attributes": {
-                "time": time? time.format() : moment().format()
-            },
-            "$value": value
-        }
-    };
-    this.raw=function(){
-        return point;
-    };
-}
-let wsdlOptions = {
+const wsdlOptions = {
   "overrideRootElement": {
     "namespace": "ns1",
     "xmlnsAttributes": [{
@@ -129,65 +13,174 @@ let wsdlOptions = {
     }]
   }
 };
+const trimTail = /[^\/]+$/,
+      invalidPointID = 'invalidPointID';
+function newTransport(grouped){
+    return {
+        "transport":{
+            "body": {
+                "pointSet": _.map(grouped, toPointSet)
+            }
+        }
+    };
+}
+function toPointSet(objs, id){
+    return {
+        "pointSet": {
+            "attributes": {
+                id
+            },
+            "point" : objs.map(toPoint)
+        }
+    }
+}
+function toPoint(obj) {
+    const { id, value, time } = obj
+    return {
+        "attributes": {
+            id
+        },
+        "value": {
+            "attributes": {
+                "time": time? time.format() : moment().format()
+            },
+            "$value": value
+        }
+    }
+}
+function newQuery(keys){
+    return {
+      "query": {
+          "attributes": {
+              "id": uuid(),
+              "type": "storage",
+              "acceptableSize":"1000"
+          },
+          "key": keys
+      }
+    }
+}
 
-function Client(url, prefix){
-    if (!this instanceof Client) return new Client(url, prefix);
-    pointID_prefix=prefix;
-    var self=this;
-    var soapClient;
-    var _write=function(points, cb){
-        soap.createClient(url, wsdlOptions, function(err, client){
-            if (err)cb(err, client);
-            else client.data(newTransport(points), cb);
+function toKey(attributes){
+    return { attributes }
+}
+function toLatest(id) {
+    return toKey({id, attrName: "time", select: "maximum"})
+}
+function makeResult(rs){
+    return new Promise(function(resolve, reject) {
+        if(rs.transport.header["error"]!==undefined){
+            return reject({
+                  type: rs.transport.header.error.attributes.type,
+                  content: rs.transport.header.error.$value
+              })
+        }
+        let points=rs.transport.body.point;
+
+        if (_.isArray(points))
+          points=_.groupBy(points, ({attributes}) => attributes.id);
+        else {
+          const newPoints={};
+          newPoints[points.attributes.id]=[{value:points.value}];
+          points=newPoints;
+        }
+        _.forEach(points, (n, key) => {
+            if (_.isArray(n[0].value))
+              points[key]= _.map(n[0].value, ({$value, attributes}) => ({
+                value: $value,
+                time: attributes.time
+              }));
+            else if(_.isUndefined(n[0].value)){
+              points[key]=undefined;
+            }
+            else
+              points[key]= _.map(n, ({value}) => ({
+                value: value.$value,
+                time: value.attributes.time
+              }));
+
+
         });
-    };
-    var _fetch=function(data, cb){
-        soap.createClient(url, wsdlOptions, function(err, client){
-            if (err)cb(err, client);
-            else client.query({
-                transport: {
-                    header: data
-                }
-            }, function(err, rs){makeResult(err, rs, cb);});
-        });
-    };
-    var init=function(){
-      soap.createClient(url, wsdlOptions, function(err, client){
-          if (err){
-            console.error(err);
-          }else {
-            soapClient=client;
-            _write=function(points, cb){
-              if (soapClient["data"]!==undefined)
-                soapClient.data(newTransport(points), cb);
-            };
-            _fetch=function(data, cb){
-              if (soapClient["query"]!==undefined)
-                soapClient.query({
-                    transport: {
-                        header: data
-                    }
-                }, function(err, rs){makeResult(err, rs, cb);});
-            };
-          }
-      });
-    };
-    this.write=_write;
-    this.latest=function(ids, cb){
-        
-      _fetch(latest(ids), cb);
-    };
-    this.fetch=function(ids, time, cb){
-      if (arguments.length>2)
-        _fetch(queryByTime(ids, time), cb);
-      else _fetch(queryByTime(ids), time);
-    };
-    init();
+        resolve(points);
+    });
 }
 
 
+
+const emptyFn = ()=>{};
+class Client {
+    constructor(url) {
+        this._client = null
+        Object.defineProperty(this, 'client',{
+            set:emptyFn,
+            get:() => {
+                return new Promise((resolve, reject) => {
+                    if (this._client) return resolve(this._client);
+                    soap.createClient(url, wsdlOptions, (err, client) => {
+                        if (err){
+                          reject(err)
+                        }else {
+                          this._client = client
+                          resolve(client)
+                        }
+                    });
+                });
+            }
+        })
+
+    }
+    errPromise(msg){
+        return new Promise(function(resolve, reject) {
+            reject(new Error(msg))
+        });
+    }
+    write(points, cb=emptyFn){
+      if (points && points.length && points.length > 0){
+          let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
+          if (grouped[invalidPointID]) delete grouped[invalidPointID];
+          return new Promise((resolve, reject) => {
+              this.client.then((client) => {
+                  return client.dataAsync(newTransport(grouped)).then(this.successHandler(cb)).then(resolve)
+              }).catch(this.errHandler(cb, reject));
+          });
+
+      }
+      return this.errPromise('Invalid parameter detected.');
+    }
+    successHandler(cb){
+        return rs =>{
+            cb(null, rs)
+            return rs
+        }
+    }
+    errHandler(cb, reject){
+        return err => {
+            cb(err)
+            reject(err)
+        }
+    }
+    _fetch(query, cb){
+      return new Promise((resolve, reject) => {
+          this.client.then((client) => {
+              return client.queryAsync({
+                  transport: {
+                      header: query
+                  }
+              }).then(makeResult).then(this.successHandler(cb)).then(resolve)
+          }).catch(this.errHandler(cb, reject));
+      });
+    }
+    fetch(opts, cb=emptyFn){
+        // console.log(util.inspect(newQuery(opts.map(toKey)), {depth:null}))
+        return this._fetch(newQuery(opts.map(toKey)), cb);
+    }
+    latest(ids, cb=emptyFn){
+        // console.log(util.inspect(newQuery(ids.map(toLatest)), {depth:null}))
+        return this._fetch(newQuery(ids.map(toLatest)), cb);
+    }
+}
+
 module.exports={
-  Client: Client,
-  Point: Point,
-  moment: moment
+    Client,
+    moment
 };
