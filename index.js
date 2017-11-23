@@ -135,17 +135,17 @@ class Client {
         });
     }
     write(points, cb=emptyFn){
-      if (points && points.length && points.length > 0){
-          let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
-          if (grouped[invalidPointID]) delete grouped[invalidPointID];
-          return new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
+          if (points && points.length && points.length > 0){
+              let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
+              if (grouped[invalidPointID]) delete grouped[invalidPointID];
               this.client.then((client) => {
                   return client.dataAsync(newTransport(grouped))
               }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
-          });
-
-      }
-      return this.errPromise('Invalid parameter detected.');
+          }else{
+              this.errHandler(cb, reject)('Invalid parameter detected.')
+          }
+      });
     }
     successHandler(cb){
         return rs =>{
