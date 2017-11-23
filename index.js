@@ -1,7 +1,7 @@
-var soap=require("./soap.js");
-var uuid=require("node-uuid");
+var soap=require("soap");
+var uuid=require("uuid/v4");
 var moment=require("moment");
-var _=require("./node_modules/soap/node_modules/lodash/");
+var _=require("lodash");
 var pointID_prefix;
 
 function newTransport(points){
@@ -24,7 +24,7 @@ function newTransport(points){
 function Query(){
     var query={
         "attributes": {
-            "id": uuid.v4(),
+            "id": uuid(),
             "type": "storage"
         },
         "key": []
@@ -120,7 +120,15 @@ function Point(id, value, time){
         return point;
     };
 }
-
+let wsdlOptions = {
+  "overrideRootElement": {
+    "namespace": "ns1",
+    "xmlnsAttributes": [{
+      "name": "xmlns:ns1",
+      "value": "http://gutp.jp/fiap/2009/11/"
+    }]
+  }
+};
 
 function Client(url, prefix){
     if (!this instanceof Client) return new Client(url, prefix);
@@ -128,13 +136,13 @@ function Client(url, prefix){
     var self=this;
     var soapClient;
     var _write=function(points, cb){
-        soap.createClient(url, function(err, client){
+        soap.createClient(url, wsdlOptions, function(err, client){
             if (err)cb(err, client);
             else client.data(newTransport(points), cb);
         });
     };
     var _fetch=function(data, cb){
-        soap.createClient(url, function(err, client){
+        soap.createClient(url, wsdlOptions, function(err, client){
             if (err)cb(err, client);
             else client.query({
                 transport: {
@@ -144,7 +152,7 @@ function Client(url, prefix){
         });
     };
     var init=function(){
-      soap.createClient(url, function(err, client){
+      soap.createClient(url, wsdlOptions, function(err, client){
           if (err){
             console.error(err);
           }else {
@@ -166,6 +174,7 @@ function Client(url, prefix){
     };
     this.write=_write;
     this.latest=function(ids, cb){
+        
       _fetch(latest(ids), cb);
     };
     this.fetch=function(ids, time, cb){

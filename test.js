@@ -1,41 +1,46 @@
 var ieee1888=require('./index.js');
-var client = new ieee1888.Client('http://fiap.dsxs.me/axis2/services/FIAPStorage?wsdl', 'http://fiap.dxs.me/test/');
+const url = `http://fiap-sandbox.gutp.ic.i.u-tokyo.ac.jp/axis2/services/FIAPStorage?wsdl`
+var client = new ieee1888.Client(url, '')
+// var client = new ieee1888.Client('http://52.88.232.186/axis2/services/FIAPStorage?wsdl', 'http://test/');
 // client.on('connection', function(client){
 //   console.log('connected');
 // });
-var rh=new ieee1888.Point("Humidity", 8.99 );
-var tmp=new ieee1888.Point("Temperature", 6.00, ieee1888.moment());
+var rh=new ieee1888.Point("Humidity",1 );
+var tmp=new ieee1888.Point("Temperature", 1, ieee1888.moment());
 var points=[rh, tmp];
-// client.write(points, function(err, rs){
-//     // if (err) console.error(err);
-//     console.log(rs);
-//     // console.log(client.lastRequest);
-// });
-// client.latest(["Humidity", "Temperature"], function(err, rs){
-//   // if (err) console.error(err);
-//   console.log(rs);
-// });
+
 // client.fetch(
-//     ["Humidity", "Temperature"],
-//     // [ieee1888.moment("2015-04-14"), ieee1888.moment()],
+//   ["EC", "T2"],
+//     [ieee1888.moment("2015-07-23T14:00"), ieee1888.moment()],
 //   function(err, rs){
-//     // if (err) console.error(err);
+//     if (err) console.error(err);
 //     console.log(rs);
 // });
-setInterval(function(){
-  client.latest(["Humidity"], function(err, rs){
-    if (err) console.error(err);
-    console.log(rs);
-  });
-  // client.fetch(
-  //     ["Humidity"],
-  //     [ieee1888.moment("2015-04-14"), ieee1888.moment()],
-  //   function(err, rs){
-  //     if (err) console.error(err);
-  //     console.log(rs);
-  // });
+client.latest(["http://gutp.jp/Arduino/Labo-a003/Temp"], function(err, rs){
+  // if (err) console.error(err);
+  console.log(err, rs);
+});
+// client.fetch(
+//     ["VWC1", "VWC3"],
+//     [ieee1888.moment("2015-06-21T14:00"), ieee1888.moment()],
+//   function(err, rs){
+//     if (err) console.error(err);
+//     console.log(rs['http://hitek.com/houlong/24000005/VWC1'].length);
+// });
+// setInterval(function(){
+//   // client.latest(["EC"], function(err, rs){
+//   //   if (err) console.error(err);
+//   //   console.log(rs);
+//   // });
+//   // client.fetch(
+//   //   ["Humidity", "Temperature"],
+//   //     [ieee1888.moment("2015-04-14"), ieee1888.moment()],
+//   //   function(err, rs){
+//   //     if (err) console.error(err);
+//   //     console.log(rs);
+//   // });
   // client.write(points, function(err, rs){
   //     if (err) console.error(err);
-  //     console.log(rs);
+  //     console.log(rs.transport.header.error);
   // });
-}, 1000);
+// }, 1000);
