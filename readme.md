@@ -1,10 +1,10 @@
 node module for ieee1888 write and fetch.
-#installation
+# Installation
 ```
 npm install ieee1888
 ```
 
-#Sample code
+# Sample code
 
 ```javascript
 
