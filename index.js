@@ -140,8 +140,8 @@ class Client {
           if (grouped[invalidPointID]) delete grouped[invalidPointID];
           return new Promise((resolve, reject) => {
               this.client.then((client) => {
-                  return client.dataAsync(newTransport(grouped)).then(this.successHandler(cb)).then(resolve)
-              }).catch(this.errHandler(cb, reject));
+                  return client.dataAsync(newTransport(grouped))
+              }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
           });
 
       }
@@ -166,8 +166,8 @@ class Client {
                   transport: {
                       header: query
                   }
-              }).then(makeResult).then(this.successHandler(cb)).then(resolve)
-          }).catch(this.errHandler(cb, reject));
+              }).then(makeResult)
+          }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
       });
     }
     fetch(opts, cb=emptyFn){
