@@ -38,11 +38,7 @@ function toPointSet(objs, id) {
 }
 
 function toPoint(obj) {
-    const {
-        id,
-        value,
-        time
-    } = obj
+    const { id, value, time } = obj
     return {
         "attributes": {
             id
@@ -68,8 +64,14 @@ function newQuery(keys) {
         }
     }
 }
-
+function timeString(attr, key) {
+    if (attr[key]){
+        attr[key] = attr[key].format ? attr[key].format() :moment().format();
+    }
+    return attr
+}
 function toKey(attributes) {
+    attributes = timeString(timeString(attributes, 'lteq'), 'gteq')
     return {
         attributes
     }

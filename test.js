@@ -24,13 +24,19 @@ client.fetch([{
     // lteq: moment()
 }], function(err, rs){
   // if (err) console.error(err);
-  console.log(err, rs);
-}).catch(() => {
-
+  // console.log(err, rs);
+}).then(rs => {
+    console.log(rs);
+}).catch(err => {
+    console.log(err);
 });
 client.latest(["http://gutp.jp/Arduino/Labo-a003/Temp"], function(err, rs){
   // if (err) console.error(err);
-  console.log(err, rs);
+  // console.log(err, rs);
+}).then(rs => {
+    console.log(rs);
+}).catch(err => {
+    console.log(err);
 });
 // client.fetch(
 //     ["VWC1", "VWC3"],
