@@ -16,6 +16,14 @@ const wsdlOptions = {
 const trimTail = /[^\/]+$/,
     invalidPointID = 'invalidPointID';
 
+class IEEE1888Error extends Error{
+    constructor(type, content){
+        super()
+        this.name = type
+        this.message = content
+    }
+}
+
 function newTransport(grouped) {
     return {
         "transport": {
@@ -28,12 +36,10 @@ function newTransport(grouped) {
 
 function toPointSet(objs, id) {
     return {
-        "pointSet": {
-            "attributes": {
-                id
-            },
-            "point": objs.map(toPoint)
-        }
+        "attributes": {
+            id
+        },
+        "point": objs.map(toPoint)
     }
 }
 
@@ -88,10 +94,10 @@ function toLatest(id) {
 function makeResult(rs) {
     return new Promise(function(resolve, reject) {
         if (rs.transport.header["error"] !== undefined) {
-            return reject({
-                type: rs.transport.header.error.attributes.type,
-                content: rs.transport.header.error.$value
-            })
+            return reject(new IEEE1888Error(
+                rs.transport.header.error.attributes.type,
+                rs.transport.header.error.$value
+            ))
         }
         let points = rs.transport.body.point;
 
@@ -166,10 +172,11 @@ class Client {
                 let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
                 if (grouped[invalidPointID]) delete grouped[invalidPointID];
                 this.client.then((client) => {
+                    // console.log(util.inspect(newTransport(grouped), {depth:null}))
                     return client.dataAsync(newTransport(grouped))
                 }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
             } else {
-                this.errHandler(cb, reject)('Invalid parameter detected.')
+                this.errHandler(cb, reject)(new IEEE1888Error('Parameter Error', 'Invalid parameter detected.'))
             }
         });
     }
