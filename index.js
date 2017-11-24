@@ -5,99 +5,123 @@ const _ = require("lodash");
 const util = require('util')
 
 const wsdlOptions = {
-  "overrideRootElement": {
-    "namespace": "ns1",
-    "xmlnsAttributes": [{
-      "name": "xmlns:ns1",
-      "value": "http://gutp.jp/fiap/2009/11/"
-    }]
-  }
+    "overrideRootElement": {
+        "namespace": "ns1",
+        "xmlnsAttributes": [{
+            "name": "xmlns:ns1",
+            "value": "http://gutp.jp/fiap/2009/11/"
+        }]
+    }
 };
 const trimTail = /[^\/]+$/,
-      invalidPointID = 'invalidPointID';
-function newTransport(grouped){
+    invalidPointID = 'invalidPointID';
+
+function newTransport(grouped) {
     return {
-        "transport":{
+        "transport": {
             "body": {
                 "pointSet": _.map(grouped, toPointSet)
             }
         }
     };
 }
-function toPointSet(objs, id){
+
+function toPointSet(objs, id) {
     return {
         "pointSet": {
             "attributes": {
                 id
             },
-            "point" : objs.map(toPoint)
+            "point": objs.map(toPoint)
         }
     }
 }
+
 function toPoint(obj) {
-    const { id, value, time } = obj
+    const {
+        id,
+        value,
+        time
+    } = obj
     return {
         "attributes": {
             id
         },
         "value": {
             "attributes": {
-                "time": time? time.format() : moment().format()
+                "time": time ? time.format() : moment().format()
             },
             "$value": value
         }
     }
 }
-function newQuery(keys){
+
+function newQuery(keys) {
     return {
-      "query": {
-          "attributes": {
-              "id": uuid(),
-              "type": "storage",
-              "acceptableSize":"1000"
-          },
-          "key": keys
-      }
+        "query": {
+            "attributes": {
+                "id": uuid(),
+                "type": "storage",
+                "acceptableSize": "1000"
+            },
+            "key": keys
+        }
     }
 }
 
-function toKey(attributes){
-    return { attributes }
+function toKey(attributes) {
+    return {
+        attributes
+    }
 }
+
 function toLatest(id) {
-    return toKey({id, attrName: "time", select: "maximum"})
+    return toKey({
+        id,
+        attrName: "time",
+        select: "maximum"
+    })
 }
-function makeResult(rs){
+
+function makeResult(rs) {
     return new Promise(function(resolve, reject) {
-        if(rs.transport.header["error"]!==undefined){
+        if (rs.transport.header["error"] !== undefined) {
             return reject({
-                  type: rs.transport.header.error.attributes.type,
-                  content: rs.transport.header.error.$value
-              })
+                type: rs.transport.header.error.attributes.type,
+                content: rs.transport.header.error.$value
+            })
         }
-        let points=rs.transport.body.point;
+        let points = rs.transport.body.point;
 
         if (_.isArray(points))
-          points=_.groupBy(points, ({attributes}) => attributes.id);
+            points = _.groupBy(points, ({
+                attributes
+            }) => attributes.id);
         else {
-          const newPoints={};
-          newPoints[points.attributes.id]=[{value:points.value}];
-          points=newPoints;
+            const newPoints = {};
+            newPoints[points.attributes.id] = [{
+                value: points.value
+            }];
+            points = newPoints;
         }
         _.forEach(points, (n, key) => {
             if (_.isArray(n[0].value))
-              points[key]= _.map(n[0].value, ({$value, attributes}) => ({
-                value: $value,
-                time: attributes.time
-              }));
-            else if(_.isUndefined(n[0].value)){
-              points[key]=undefined;
-            }
-            else
-              points[key]= _.map(n, ({value}) => ({
-                value: value.$value,
-                time: value.attributes.time
-              }));
+                points[key] = _.map(n[0].value, ({
+                    $value,
+                    attributes
+                }) => ({
+                    value: $value,
+                    time: attributes.time
+                }));
+            else if (_.isUndefined(n[0].value)) {
+                points[key] = undefined;
+            } else
+                points[key] = _.map(n, ({
+                    value
+                }) => ({
+                    value: value.$value,
+                    time: value.attributes.time
+                }));
 
 
         });
@@ -107,21 +131,21 @@ function makeResult(rs){
 
 
 
-const emptyFn = ()=>{};
+const emptyFn = () => {};
 class Client {
     constructor(url) {
         this._client = null
-        Object.defineProperty(this, 'client',{
-            set:emptyFn,
-            get:() => {
+        Object.defineProperty(this, 'client', {
+            set: emptyFn,
+            get: () => {
                 return new Promise((resolve, reject) => {
                     if (this._client) return resolve(this._client);
                     soap.createClient(url, wsdlOptions, (err, client) => {
-                        if (err){
-                          reject(err)
-                        }else {
-                          this._client = client
-                          resolve(client)
+                        if (err) {
+                            reject(err)
+                        } else {
+                            this._client = client
+                            resolve(client)
                         }
                     });
                 });
@@ -129,58 +153,58 @@ class Client {
         })
 
     }
-    errPromise(msg){
+    errPromise(msg) {
         return new Promise(function(resolve, reject) {
             reject(new Error(msg))
         });
     }
-    write(points, cb=emptyFn){
-      return new Promise((resolve, reject) => {
-          if (points && points.length && points.length > 0){
-              let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
-              if (grouped[invalidPointID]) delete grouped[invalidPointID];
-              this.client.then((client) => {
-                  return client.dataAsync(newTransport(grouped))
-              }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
-          }else{
-              this.errHandler(cb, reject)('Invalid parameter detected.')
-          }
-      });
+    write(points, cb = emptyFn) {
+        return new Promise((resolve, reject) => {
+            if (points && points.length && points.length > 0) {
+                let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
+                if (grouped[invalidPointID]) delete grouped[invalidPointID];
+                this.client.then((client) => {
+                    return client.dataAsync(newTransport(grouped))
+                }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
+            } else {
+                this.errHandler(cb, reject)('Invalid parameter detected.')
+            }
+        });
     }
-    successHandler(cb){
-        return rs =>{
+    successHandler(cb) {
+        return rs => {
             cb(null, rs)
             return rs
         }
     }
-    errHandler(cb, reject){
+    errHandler(cb, reject) {
         return err => {
             cb(err)
             reject(err)
         }
     }
-    _fetch(query, cb){
-      return new Promise((resolve, reject) => {
-          this.client.then((client) => {
-              return client.queryAsync({
-                  transport: {
-                      header: query
-                  }
-              }).then(makeResult)
-          }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
-      });
+    _fetch(query, cb) {
+        return new Promise((resolve, reject) => {
+            this.client.then((client) => {
+                return client.queryAsync({
+                    transport: {
+                        header: query
+                    }
+                }).then(makeResult)
+            }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
+        });
     }
-    fetch(opts, cb=emptyFn){
+    fetch(opts, cb = emptyFn) {
         // console.log(util.inspect(newQuery(opts.map(toKey)), {depth:null}))
         return this._fetch(newQuery(opts.map(toKey)), cb);
     }
-    latest(ids, cb=emptyFn){
+    latest(ids, cb = emptyFn) {
         // console.log(util.inspect(newQuery(ids.map(toLatest)), {depth:null}))
         return this._fetch(newQuery(ids.map(toLatest)), cb);
     }
 }
 
-module.exports={
+module.exports = {
     Client,
     moment
 };
