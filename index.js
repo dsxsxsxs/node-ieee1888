@@ -1,8 +1,9 @@
-const soap = require("soap");
-const uuid = require("uuid/v4");
-const moment = require("moment");
-const _ = require("lodash");
+const soap = require("soap")
+const uuid = require("uuid/v4")
+const moment = require("moment")
+const _ = require("lodash")
 const util = require('util')
+const Emitter = require("event").EventEmitter
 
 const wsdlOptions = {
   "overrideRootElement": {
@@ -15,6 +16,14 @@ const wsdlOptions = {
 };
 const trimTail = /[^\/]+$/,
       invalidPointID = 'invalidPointID';
+
+class IEEE1888TransportError extends Error{
+    constructor(type='IEEE1888TransportError', content){
+        this.name = type
+        this.message = content
+    }
+}
+
 function newTransport(grouped){
     return {
         "transport":{
@@ -70,10 +79,10 @@ function toLatest(id) {
 function makeResult(rs){
     return new Promise(function(resolve, reject) {
         if(rs.transport.header["error"]!==undefined){
-            return reject({
-                  type: rs.transport.header.error.attributes.type,
-                  content: rs.transport.header.error.$value
-              })
+            return reject(new IEEE1888TransportError(
+                rs.transport.header.error.attributes.type,
+                rs.transport.header.error.$value
+            ))
         }
         let points=rs.transport.body.point;
 
@@ -108,7 +117,7 @@ function makeResult(rs){
 
 
 const emptyFn = ()=>{};
-class Client {
+class Client extends Emitter {
     constructor(url) {
         this._client = null
         Object.defineProperty(this, 'client',{
@@ -150,12 +159,14 @@ class Client {
     successHandler(cb){
         return rs =>{
             cb(null, rs)
+            this.emit('data', rs)
             return rs
         }
     }
     errHandler(cb, reject){
         return err => {
             cb(err)
+            this.emit('error', err)
             reject(err)
         }
     }
