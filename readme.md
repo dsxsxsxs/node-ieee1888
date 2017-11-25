@@ -1,49 +1,73 @@
 node module for ieee1888 write and fetch.
+
 # Installation
+
 ```
 npm install ieee1888
 ```
+
 
 # Sample code
 
 ```javascript
 
-var ieee1888=require('ieee1888');
+const ieee1888 = require('ieee1888');
 
-var client = new ieee1888.Client('http://sample.org/axis2/services/FIAPStorage?wsdl', 'point_id_prefix');
+const client = new ieee1888.Client('http://sample.org/axis2/services/FIAPStorage?wsdl');
 
-// using current time
-var rh=new ieee1888.Point("Humidity", 99.99);
-// using custom time
-var tmp=new ieee1888.Point("Temperature", 26.00, ieee1888.moment());
-
-// ieee1888 write
-var points=[rh, tmp];
-client.write(points, function(err, rs){
-    if (err) console.error(err);
+client.write([
+    { id: 'http://test.io/path/id',    value: 27, time: moment() },
+    { id: 'http://test.io/path/id',    value: 88.88, time: moment() },
+    { id: 'http://test.io/test/value', value: 88.88, time: moment() }
+], (err, rs) => {
+    if (err) console.error(err)
     console.log(rs);
+})
+.then(rs => {
+    console.log(rs);
+}).catch(err => {
+    console.log(err);
 });
 // fetch latest
-client.latest(["Humidity", "Temperature"], function(err, rs){
+client.latest([
+    'http://test.io/path/id',  
+    'http://test.io/path/id',  
+    'http://test.io/test/value'
+], (err, rs) => {
   if (err) console.error(err);
   console.log(rs);
+})
+.then(rs => {
+    console.log(rs);
+}).catch(err => {
+    console.log(err);
 });
 
 // fetch all
-client.fetch(
-    ["Humidity", "Temperature"],
-  function(err, rs){
+client.fetch([
+    {
+        id: 'http://test.io/path/id',
+        attrName: "time",
+        lteq: moment()
+    },
+    {
+        id: 'http://test.io/path/id',
+        attrName: "time",
+        gteq: moment().subtract(1, 'days')
+    },
+    {
+        id: 'http://test.io/path/id',
+        attrName: "time",
+        select: "maximum"
+    },
+], (err, rs) => {
     if (err) console.error(err);
     console.log(rs);
-});
-
-// fetch by time
-client.fetch(
-    ["Humidity", "Temperature"],
-    [ieee1888.moment("date string"), ieee1888.moment()],
-  function(err, rs){
-    if (err) console.error(err);
+})
+.then(rs => {
     console.log(rs);
+}).catch(err => {
+    console.log(err);
 });
 
 
