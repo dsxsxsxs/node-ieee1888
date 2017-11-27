@@ -10,6 +10,7 @@
     "axios": "^0.17.1",
     "babel-core": "^6.26.0",
     "babelify": "^8.0.0",
+    "brfs": "^1.4.3",
     "lodash": "^4.17.4",
     "moment": "^2.9.0",
     "soap": "^0.23.0",
@@ -18,7 +19,8 @@
   "devDependencies": {
     "mocha": "^3.5.3",
     "uglify-es": "latest",
-    "browserify": "^14.5.0"
+    "browserify": "^14.5.0",
+    "brfs": "latest"
   },
   "files": [
     "license.md",
@@ -30,7 +32,7 @@
   "main": "./index.js",
   "scripts": {
     "test": "mocha ",
-    "browserify:min": "browserify ./index.js | uglifyjs > ./ieee1888.min.js",
-    "browserify": "browserify ./index.js > ./ieee1888.js"
+    "browserify:min": "browserify -t brfs ./index.js | uglifyjs > ./ieee1888.min.js",
+    "browserify": "browserify -t [ brfs --bar=555 ] ./index.js > ./ieee1888.js"
   }
 }
