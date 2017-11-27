@@ -3,22 +3,27 @@
   "version": "0.0.8",
   "description": "A node module for IEEE1888 protocol",
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=6.0.0"
   },
-  "author": {
-    "name": "Shih Jia-Cheng",
-    "email": "dsxsxsxs@gmail.com"
-  },
+  "author": "Shih Jia-Cheng(dsxs) <dsxsxsxs@gmail.com>",
   "dependencies": {
     "lodash": "^4.17.4",
     "moment": "^2.9.0",
     "soap": "^0.23.0",
     "uuid": "^3.1.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/dsxsxsxs/node-ieee1888"
+  "devDependencies": {
+    "mocha": "^3.5.3",
   },
+  "files": [
+    "license.md",
+    "readme.md",
+    "index.js"
+  ],
+  "repository": "dsxsxsxs/node-ieee1888",
   "licenses": "MIT",
-  "main": "./index.js"
+  "main": "./index.js",
+  "scripts": {
+    "test": "mocha --require test/support/env --reporter spec --bail --check-leaks --no-exit test/ test/acceptance/"
+  }
 }

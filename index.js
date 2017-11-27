@@ -6,43 +6,44 @@ const util = require('util')
 const Emitter = require("event").EventEmitter
 
 const wsdlOptions = {
-  "overrideRootElement": {
-    "namespace": "ns1",
-    "xmlnsAttributes": [{
-      "name": "xmlns:ns1",
-      "value": "http://gutp.jp/fiap/2009/11/"
-    }]
-  }
+    "overrideRootElement": {
+        "namespace": "ns1",
+        "xmlnsAttributes": [{
+            "name": "xmlns:ns1",
+            "value": "http://gutp.jp/fiap/2009/11/"
+        }]
+    }
 };
 const trimTail = /[^\/]+$/,
-      invalidPointID = 'invalidPointID';
+    invalidPointID = 'invalidPointID';
 
-class IEEE1888TransportError extends Error{
-    constructor(type='IEEE1888TransportError', content){
+class IEEE1888Error extends Error{
+    constructor(type, content){
+        super()
         this.name = type
         this.message = content
     }
 }
 
-function newTransport(grouped){
+function newTransport(grouped) {
     return {
-        "transport":{
+        "transport": {
             "body": {
                 "pointSet": _.map(grouped, toPointSet)
             }
         }
     };
 }
-function toPointSet(objs, id){
+
+function toPointSet(objs, id) {
     return {
-        "pointSet": {
-            "attributes": {
-                id
-            },
-            "point" : objs.map(toPoint)
-        }
+        "attributes": {
+            id
+        },
+        "point": objs.map(toPoint)
     }
 }
+
 function toPoint(obj) {
     const { id, value, time } = obj
     return {
@@ -51,62 +52,85 @@ function toPoint(obj) {
         },
         "value": {
             "attributes": {
-                "time": time? time.format() : moment().format()
+                "time": time ? time.format() : moment().format()
             },
             "$value": value
         }
     }
 }
-function newQuery(keys){
+
+function newQuery(keys) {
     return {
-      "query": {
-          "attributes": {
-              "id": uuid(),
-              "type": "storage",
-              "acceptableSize":"1000"
-          },
-          "key": keys
-      }
+        "query": {
+            "attributes": {
+                "id": uuid(),
+                "type": "storage",
+                "acceptableSize": "1000"
+            },
+            "key": keys
+        }
+    }
+}
+function timeString(attr, key) {
+    if (attr[key]){
+        attr[key] = attr[key].format ? attr[key].format() :moment().format();
+    }
+    return attr
+}
+function toKey(attributes) {
+    attributes = timeString(timeString(attributes, 'lteq'), 'gteq')
+    return {
+        attributes
     }
 }
 
-function toKey(attributes){
-    return { attributes }
-}
 function toLatest(id) {
-    return toKey({id, attrName: "time", select: "maximum"})
+    return toKey({
+        id,
+        attrName: "time",
+        select: "maximum"
+    })
 }
-function makeResult(rs){
+
+function makeResult(rs) {
     return new Promise(function(resolve, reject) {
-        if(rs.transport.header["error"]!==undefined){
-            return reject(new IEEE1888TransportError(
+        if (rs.transport.header["error"] !== undefined) {
+            return reject(new IEEE1888Error(
                 rs.transport.header.error.attributes.type,
                 rs.transport.header.error.$value
             ))
         }
-        let points=rs.transport.body.point;
+        let points = rs.transport.body.point;
 
         if (_.isArray(points))
-          points=_.groupBy(points, ({attributes}) => attributes.id);
+            points = _.groupBy(points, ({
+                attributes
+            }) => attributes.id);
         else {
-          const newPoints={};
-          newPoints[points.attributes.id]=[{value:points.value}];
-          points=newPoints;
+            const newPoints = {};
+            newPoints[points.attributes.id] = [{
+                value: points.value
+            }];
+            points = newPoints;
         }
         _.forEach(points, (n, key) => {
             if (_.isArray(n[0].value))
-              points[key]= _.map(n[0].value, ({$value, attributes}) => ({
-                value: $value,
-                time: attributes.time
-              }));
-            else if(_.isUndefined(n[0].value)){
-              points[key]=undefined;
-            }
-            else
-              points[key]= _.map(n, ({value}) => ({
-                value: value.$value,
-                time: value.attributes.time
-              }));
+                points[key] = _.map(n[0].value, ({
+                    $value,
+                    attributes
+                }) => ({
+                    value: $value,
+                    time: attributes.time
+                }));
+            else if (_.isUndefined(n[0].value)) {
+                points[key] = undefined;
+            } else
+                points[key] = _.map(n, ({
+                    value
+                }) => ({
+                    value: value.$value,
+                    time: value.attributes.time
+                }));
 
 
         });
@@ -120,17 +144,17 @@ const emptyFn = ()=>{};
 class Client extends Emitter {
     constructor(url) {
         this._client = null
-        Object.defineProperty(this, 'client',{
-            set:emptyFn,
-            get:() => {
+        Object.defineProperty(this, 'client', {
+            set: emptyFn,
+            get: () => {
                 return new Promise((resolve, reject) => {
                     if (this._client) return resolve(this._client);
                     soap.createClient(url, wsdlOptions, (err, client) => {
-                        if (err){
-                          reject(err)
-                        }else {
-                          this._client = client
-                          resolve(client)
+                        if (err) {
+                            reject(err)
+                        } else {
+                            this._client = client
+                            resolve(client)
                         }
                     });
                 });
@@ -138,60 +162,61 @@ class Client extends Emitter {
         })
 
     }
-    errPromise(msg){
+    errPromise(msg) {
         return new Promise(function(resolve, reject) {
             reject(new Error(msg))
         });
     }
-    write(points, cb=emptyFn){
-      return new Promise((resolve, reject) => {
-          if (points && points.length && points.length > 0){
-              let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
-              if (grouped[invalidPointID]) delete grouped[invalidPointID];
-              this.client.then((client) => {
-                  return client.dataAsync(newTransport(grouped))
-              }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
-          }else{
-              this.errHandler(cb, reject)('Invalid parameter detected.')
-          }
-      });
+    write(points, cb = emptyFn) {
+        return new Promise((resolve, reject) => {
+            if (points && points.length && points.length > 0) {
+                let grouped = _.groupBy(points, p => p.id && p.id.replace(trimTail, '') || invalidPointID)
+                if (grouped[invalidPointID]) delete grouped[invalidPointID];
+                this.client.then((client) => {
+                    // console.log(util.inspect(newTransport(grouped), {depth:null}))
+                    return client.dataAsync(newTransport(grouped))
+                }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
+            } else {
+                this.errHandler(cb, reject)(new IEEE1888Error('Parameter Error', 'Invalid parameter detected.'))
+            }
+        });
     }
-    successHandler(cb){
-        return rs =>{
+    successHandler(cb) {
+        return rs => {
             cb(null, rs)
             this.emit('data', rs)
             return rs
         }
     }
-    errHandler(cb, reject){
+    errHandler(cb, reject) {
         return err => {
             cb(err)
             this.emit('error', err)
             reject(err)
         }
     }
-    _fetch(query, cb){
-      return new Promise((resolve, reject) => {
-          this.client.then((client) => {
-              return client.queryAsync({
-                  transport: {
-                      header: query
-                  }
-              }).then(makeResult)
-          }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
-      });
+    _fetch(query, cb) {
+        return new Promise((resolve, reject) => {
+            this.client.then((client) => {
+                return client.queryAsync({
+                    transport: {
+                        header: query
+                    }
+                }).then(makeResult)
+            }).then(this.successHandler(cb)).then(resolve).catch(this.errHandler(cb, reject));
+        });
     }
-    fetch(opts, cb=emptyFn){
+    fetch(opts, cb = emptyFn) {
         // console.log(util.inspect(newQuery(opts.map(toKey)), {depth:null}))
         return this._fetch(newQuery(opts.map(toKey)), cb);
     }
-    latest(ids, cb=emptyFn){
+    latest(ids, cb = emptyFn) {
         // console.log(util.inspect(newQuery(ids.map(toLatest)), {depth:null}))
         return this._fetch(newQuery(ids.map(toLatest)), cb);
     }
 }
 
-module.exports={
+module.exports = {
     Client,
     moment
 };
