@@ -6,6 +6,7 @@ const util = require('util')
 const Emitter = require("events").EventEmitter
 const axios = require('axios');
 function axRequest(o, cb) {
+    o.headers['Access-Control-Allow-Origin'] = '*'
     axios({
         url: o.uri.href,
         headers: o.headers,
