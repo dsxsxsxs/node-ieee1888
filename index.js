@@ -4,8 +4,25 @@ const moment = require("moment")
 const _ = require("lodash")
 const util = require('util')
 const Emitter = require("events").EventEmitter
+const axios = require('axios');
+function axRequest(o, cb) {
+    axios({
+        url: o.uri.href,
+        headers: o.headers,
+        method: o.method,
+        maxRedirects:Infinity,
+        data:o.body
+    }).then( res => {
+        res.statusCode = res.status
+        res.body = res.data
+        cb(null, res, res.data)
+    }).catch(err => {
+        cb(err, err.response, err.response.data)
+    })
+}
 
 const wsdlOptions = {
+    request: axRequest,
     "overrideRootElement": {
         "namespace": "ns1",
         "xmlnsAttributes": [{
