@@ -6,10 +6,16 @@ const util = require('util')
 const Emitter = require("events").EventEmitter
 const axios = require('axios');
 function axRequest(o, cb) {
-    o.headers['Access-Control-Allow-Origin'] = '*'
+    let headers = o.headers
+    try {
+        if (navigator.userAgent){
+            const list = ['User-Agent', 'Accept-Encoding', 'Accept-Charset', 'Connection', 'Host', 'Content-Length']
+            headers = _.pickBy(headers, (v, k) => list.indexOf(k) < 0)
+        }
+    } catch (e) {}
     axios({
         url: o.uri.href,
-        headers: o.headers,
+        headers,
         method: o.method,
         maxRedirects:Infinity,
         data:o.body
@@ -18,7 +24,7 @@ function axRequest(o, cb) {
         res.body = res.data
         cb(null, res, res.data)
     }).catch(err => {
-        cb(err, err.response, err.response.data)
+        cb(err, err.response, err.response && err.response.data)
     })
 }
 

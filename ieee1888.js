@@ -178,6 +178,7 @@ function compile(schema, _meta) {
  * @param {String} key Optional schema key. Can be passed to `validate` method instead of schema object or id/ref. One schema per instance can have empty `id` and `key`.
  * @param {Boolean} _skipValidation true to skip schema validation. Used internally, option validateSchema should be used instead.
  * @param {Boolean} _meta true if schema is a meta-schema. Used internally, addMetaSchema should be used instead.
+ * @return {Ajv} this for method chaining
  */
 function addSchema(schema, key, _skipValidation, _meta) {
   if (Array.isArray(schema)){
@@ -190,6 +191,7 @@ function addSchema(schema, key, _skipValidation, _meta) {
   key = resolve.normalizeId(key || id);
   checkUnique(this, key);
   this._schemas[key] = this._addSchema(schema, _skipValidation, _meta, true);
+  return this;
 }
 
 
@@ -200,9 +202,11 @@ function addSchema(schema, key, _skipValidation, _meta) {
  * @param {Object} schema schema object
  * @param {String} key optional schema key
  * @param {Boolean} skipValidation true to skip schema validation, can be used to override validateSchema option for meta-schema
+ * @return {Ajv} this for method chaining
  */
 function addMetaSchema(schema, key, skipValidation) {
   this.addSchema(schema, key, skipValidation, true);
+  return this;
 }
 
 
@@ -299,25 +303,26 @@ function _getSchemaObj(self, keyRef) {
  * Even if schema is referenced by other schemas it still can be removed as other schemas have local references.
  * @this   Ajv
  * @param  {String|Object|RegExp} schemaKeyRef key, ref, pattern to match key/ref or schema object
+ * @return {Ajv} this for method chaining
  */
 function removeSchema(schemaKeyRef) {
   if (schemaKeyRef instanceof RegExp) {
     _removeAllSchemas(this, this._schemas, schemaKeyRef);
     _removeAllSchemas(this, this._refs, schemaKeyRef);
-    return;
+    return this;
   }
   switch (typeof schemaKeyRef) {
     case 'undefined':
       _removeAllSchemas(this, this._schemas);
       _removeAllSchemas(this, this._refs);
       this._cache.clear();
-      return;
+      return this;
     case 'string':
       var schemaObj = _getSchemaObj(this, schemaKeyRef);
       if (schemaObj) this._cache.del(schemaObj.cacheKey);
       delete this._schemas[schemaKeyRef];
       delete this._refs[schemaKeyRef];
-      return;
+      return this;
     case 'object':
       var serialize = this._opts.serialize;
       var cacheKey = serialize ? serialize(schemaKeyRef) : schemaKeyRef;
@@ -329,6 +334,7 @@ function removeSchema(schemaKeyRef) {
         delete this._refs[id];
       }
   }
+  return this;
 }
 
 
@@ -479,10 +485,12 @@ function errorsText(errors, options) {
  * @this   Ajv
  * @param {String} name format name
  * @param {String|RegExp|Function} format string is converted to RegExp; function should return boolean (true when valid)
+ * @return {Ajv} this for method chaining
  */
 function addFormat(name, format) {
   if (typeof format == 'string') format = new RegExp(format);
   this._formats[name] = format;
+  return this;
 }
 
 
@@ -5104,6 +5112,7 @@ module.exports = {
  * @this  Ajv
  * @param {String} keyword custom keyword, should be unique (including different from all standard, custom and macro keywords).
  * @param {Object} definition keyword definition object with properties `type` (type(s) which the keyword applies to), `validate` or `compile`.
+ * @return {Ajv} this for method chaining
  */
 function addKeyword(keyword, definition) {
   /* jshint validthis: true */
@@ -5181,6 +5190,8 @@ function addKeyword(keyword, definition) {
   function checkDataType(dataType) {
     if (!RULES.types[dataType]) throw new Error('Unknown type ' + dataType);
   }
+
+  return this;
 }
 
 
@@ -5201,6 +5212,7 @@ function getKeyword(keyword) {
  * Remove keyword
  * @this  Ajv
  * @param {String} keyword pre-defined or custom keyword.
+ * @return {Ajv} this for method chaining
  */
 function removeKeyword(keyword) {
   /* jshint validthis: true */
@@ -5217,6 +5229,7 @@ function removeKeyword(keyword) {
       }
     }
   }
+  return this;
 }
 
 },{"./dotjs/custom":22}],38:[function(require,module,exports){
@@ -29938,7 +29951,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.5.7.tgz",
   "_shasum": "cc872c168880ae3c7189762fd5ffc00896c9518a",
   "_spec": "ejs@~2.5.5",
-  "_where": "/Users/sazazaza/Dropbox/www/ieee1888/node_modules/soap",
+  "_where": "/Users/dsxs/node-ieee1888/node_modules/soap",
   "author": {
     "name": "Matthew Eernisse",
     "email": "mde@fleegix.org",
@@ -33876,7 +33889,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.0.tgz",
   "_shasum": "cac9af8762c85836187003c8dfe193e5e2eae5df",
   "_spec": "elliptic@^6.0.0",
-  "_where": "/Users/sazazaza/Dropbox/www/ieee1888/node_modules/browserify-sign",
+  "_where": "/Users/dsxs/node-ieee1888/node_modules/browserify-sign",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -104147,7 +104160,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/soap/-/soap-0.23.0.tgz",
   "_shasum": "2d8f22bef979ded90c0b4d7a5b3ce23d1ed1e52f",
   "_spec": "soap@^0.23.0",
-  "_where": "/Users/sazazaza/Dropbox/www/ieee1888",
+  "_where": "/Users/dsxs/node-ieee1888",
   "author": {
     "name": "Vinay Pulim",
     "email": "v@pulim.com"
@@ -112976,7 +112989,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/tough-cookie/-/tough-cookie-2.3.3.tgz",
   "_shasum": "0b618a5565b6dea90bf3425d04d55edc475a7561",
   "_spec": "tough-cookie@~2.3.3",
-  "_where": "/Users/sazazaza/Dropbox/www/ieee1888/node_modules/request",
+  "_where": "/Users/dsxs/node-ieee1888/node_modules/request",
   "author": {
     "name": "Jeremy Stashewsky",
     "email": "jstashewsky@salesforce.com"
@@ -125916,10 +125929,16 @@ const util = require('util')
 const Emitter = require("events").EventEmitter
 const axios = require('axios');
 function axRequest(o, cb) {
-    o.headers['Access-Control-Allow-Origin'] = '*'
+    let headers = o.headers
+    try {
+        if (navigator.userAgent){
+            const list = ['User-Agent', 'Accept-Encoding', 'Accept-Charset', 'Connection', 'Host', 'Content-Length']
+            headers = _.pickBy(headers, (v, k) => list.indexOf(k) < 0)
+        }
+    } catch (e) {}
     axios({
         url: o.uri.href,
-        headers: o.headers,
+        headers,
         method: o.method,
         maxRedirects:Infinity,
         data:o.body
@@ -125928,7 +125947,7 @@ function axRequest(o, cb) {
         res.body = res.data
         cb(null, res, res.data)
     }).catch(err => {
-        cb(err, err.response, err.response.data)
+        cb(err, err.response, err.response && err.response.data)
     })
 }
 
