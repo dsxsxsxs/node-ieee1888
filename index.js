@@ -1,10 +1,31 @@
 const soap = require("soap")
 const uuid = require("uuid/v4")
 const moment = require("moment")
-const _ = require("lodash")
-const util = require('util')
 const Emitter = require("events").EventEmitter
 const axios = require('axios');
+const _ = require('./lib/fn');
+// const _ = require('lodash');
+const wsdlOptions = {
+    request: axRequest,
+    "overrideRootElement": {
+        "namespace": "ns1",
+        "xmlnsAttributes": [{
+            "name": "xmlns:ns1",
+            "value": "http://gutp.jp/fiap/2009/11/"
+        }]
+    }
+};
+const trimTail = /[^\/]+$/,
+    invalidPointID = 'invalidPointID';
+const xmlAttrKey = "attributes"
+class IEEE1888Error extends Error{
+    constructor(type, content){
+        super()
+        this.name = type
+        this.message = content
+    }
+}
+
 function axRequest(o, cb) {
     let headers = o.headers
     try {
@@ -28,32 +49,11 @@ function axRequest(o, cb) {
     })
 }
 
-const wsdlOptions = {
-    request: axRequest,
-    "overrideRootElement": {
-        "namespace": "ns1",
-        "xmlnsAttributes": [{
-            "name": "xmlns:ns1",
-            "value": "http://gutp.jp/fiap/2009/11/"
-        }]
-    }
-};
-const trimTail = /[^\/]+$/,
-    invalidPointID = 'invalidPointID';
-
-class IEEE1888Error extends Error{
-    constructor(type, content){
-        super()
-        this.name = type
-        this.message = content
-    }
-}
-
 function newTransport(grouped) {
     return {
         "transport": {
             "body": {
-                "pointSet": _.map(grouped, toPointSet)
+                "pointSet": grouped.map(toPointSet)
             }
         }
     };
@@ -61,7 +61,7 @@ function newTransport(grouped) {
 
 function toPointSet(objs, id) {
     return {
-        "attributes": {
+        [xmlAttrKey]: {
             id
         },
         "point": objs.map(toPoint)
@@ -71,11 +71,11 @@ function toPointSet(objs, id) {
 function toPoint(obj) {
     const { id, value, time } = obj
     return {
-        "attributes": {
+        [xmlAttrKey]: {
             id
         },
         "value": {
-            "attributes": {
+            [xmlAttrKey]: {
                 "time": time ? time.format() : moment().format()
             },
             "$value": value
@@ -86,7 +86,7 @@ function toPoint(obj) {
 function newQuery(keys) {
     return {
         "query": {
-            "attributes": {
+            [xmlAttrKey]: {
                 "id": uuid(),
                 "type": "storage"
             },
@@ -97,7 +97,7 @@ function newQuery(keys) {
 function newStreamQuery(keys) {
     return {
         "query": {
-            "attributes": {
+            [xmlAttrKey]: {
                 "id": uuid(),
                 "type": "stream"
             },
@@ -150,17 +150,17 @@ function mapResult(rs) {
         };
     return _.mapValues(points, (n, key) => {
         if (_.isArray(n[0].value))
-            return _.map(n[0].value, ({
+            return n[0].value.map(({
                 $value,
                 attributes
             }) => ({
                 value: $value,
                 time: attributes.time
             }));
-        else if (_.isUndefined(n[0].value))
+        else if (n[0].value === undefined)
             return undefined;
          else
-            return (_.map(n, ({
+            return (n.map(({
                 value
             }) => ({
                 value: value.$value,
@@ -250,11 +250,11 @@ class Client extends Emitter {
         });
     }
     fetch(opts, cb = emptyFn) {
-        // console.log(util.inspect(newQuery(opts.map(toKey)), {depth:null}))
+        // console.log(require('util').inspect(newQuery(opts.map(toKey(null))), {depth:null}))
         return this._fetch(newQuery(opts.map(toKey(null))), cb);
     }
     latest(ids, cb = emptyFn) {
-        // console.log(util.inspect(newQuery(ids.map(toLatest)), {depth:null}))
+        // console.log(require('util').inspect(newQuery(ids.map(toLatest)), {depth:null}))
         return this._fetch(newQuery(ids.map(toLatest)), cb);
     }
     // trap(opts, cb = emptyFn){

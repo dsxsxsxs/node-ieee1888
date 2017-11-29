@@ -8,9 +8,6 @@
   "author": "Shih Jia-Cheng(dsxs) <dsxsxsxs@gmail.com>",
   "dependencies": {
     "axios": "^0.17.1",
-    "babel-core": "^6.26.0",
-    "babelify": "^8.0.0",
-    "lodash": "^4.17.4",
     "moment": "^2.9.0",
     "soap": "^0.23.0",
     "uuid": "^3.1.0"
