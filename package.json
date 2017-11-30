@@ -2,6 +2,7 @@
   "name": "ieee1888",
   "version": "0.0.8",
   "description": "A node module for IEEE1888 protocol",
+  "license": "MIT",
   "engines": {
     "node": ">=6.0.0"
   },
@@ -28,6 +29,7 @@
   "main": "./index.js",
   "scripts": {
     "test": "mocha ",
-    "browserify": "node browserify.js"
+    "browserify": "node browserify.js",
+    "uglify": "uglifyjs --compress --mangle -- ieee1888.js > ieee1888.min.js"
   }
 }
