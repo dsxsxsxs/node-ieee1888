@@ -36,6 +36,7 @@
   "scripts": {
     "test": "mocha ",
     "browserify": "node browserify.js",
-    "uglify": "uglifyjs --compress --mangle -- ieee1888.js > ieee1888.min.js"
+    "uglify": "uglifyjs --compress --mangle -- ieee1888.js > ieee1888.min.js",
+    "lint": "eslint lib"
   }
 }
