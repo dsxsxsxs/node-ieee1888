@@ -29,6 +29,7 @@
   "main": "./index.js",
   "scripts": {
     "test": "mocha ",
-    "browserify": "node browserify.js"
+    "browserify": "node browserify.js",
+    "uglify": "uglifyjs --compress --mangle -- ieee1888.js > ieee1888.min.js"
   }
 }
