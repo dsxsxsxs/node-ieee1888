@@ -17,11 +17,8 @@
   "devDependencies": {
     "brfs": "^1.4.3",
     "browserify": "^14.5.0",
+    "eslint": "^4.12.1",
     "eslint-config-standard": "^10.2.1",
-    "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-node": "^5.2.1",
-    "eslint-plugin-promise": "^3.6.0",
-    "eslint-plugin-standard": "^3.0.1",
     "mocha": "^3.5.3",
     "uglify-es": "latest"
   },
@@ -36,6 +33,7 @@
   "scripts": {
     "test": "mocha ",
     "browserify": "node browserify.js",
-    "uglify": "uglifyjs --compress --mangle -- ieee1888.js > ieee1888.min.js"
+    "uglify": "uglifyjs --compress --mangle -- ieee1888.js > ieee1888.min.js",
+    "lint": "eslint lib"
   }
 }

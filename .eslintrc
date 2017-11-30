@@ -1,6 +1,16 @@
 {
-  "extends": "standard",
-  "rules":{
-    "indent": ["error", 4, { "SwitchCase": 1 }],
-  }
+    "extends": "standard",
+    "env": {
+        "node": true,
+        "browser": true
+    },
+    "parserOptions": {
+         "ecmaVersion": 2017
+     },
+     "rules": {
+        "indent": [2, 4, {'SwitchCase': 1}],
+        "no-useless-escape": 1,
+        "no-mixed-operators": 1,
+        "no-useless-constructor": 1
+     }
 }
