@@ -1,8 +1,6 @@
 {
-    "env": {
-        "node": true
-    },
-    "parserOptions": {
-         "ecmaVersion": 2017
-     }
+  "extends": "standard",
+  "rules":{
+    "indent": ["error", 4, { "SwitchCase": 1 }],
+  }
 }

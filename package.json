@@ -9,13 +9,19 @@
   "author": "Shih Jia-Cheng(dsxs) <dsxsxsxs@gmail.com>",
   "dependencies": {
     "axios": "^0.17.1",
-    "moment": "^2.9.0",
+    "eslint": "^4.12.1",
+    "moment": "^2.19.3",
     "soap": "^0.23.0",
     "uuid": "^3.1.0"
   },
   "devDependencies": {
     "brfs": "^1.4.3",
     "browserify": "^14.5.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1",
     "mocha": "^3.5.3",
     "uglify-es": "latest"
   },
