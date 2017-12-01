@@ -1,12 +1,15 @@
 {
   "name": "ieee1888",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A node module for IEEE1888 protocol",
   "license": "MIT",
   "engines": {
     "node": ">=6.0.0"
   },
   "author": "Shih Jia-Cheng(dsxs) <dsxsxsxs@gmail.com>",
+  "contributors": [
+    "Makoto Uju(ainehanta) <ainehanta@hotmail.co.jp>"
+  ],
   "dependencies": {
     "handsoap": "git+https://github.com/ainehanta/handsoap.git",
     "moment": "^2.19.3",
@@ -25,13 +28,15 @@
     "uglify-es": "latest"
   },
   "files": [
+    "lib",
     "license.md",
     "readme.md",
+    "browserify.js",
     "index.js"
   ],
   "repository": "dsxsxsxs/node-ieee1888",
   "licenses": "MIT",
-  "main": "./index.js",
+  "main": "index.js",
   "scripts": {
     "test": "mocha ",
     "browserify": "node browserify.js",
