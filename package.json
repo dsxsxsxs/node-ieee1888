@@ -11,7 +11,7 @@
     "Makoto Uju(ainehanta) <ainehanta@hotmail.co.jp>"
   ],
   "dependencies": {
-    "handsoap": "git+https://github.com/ainehanta/handsoap.git",
+    "handsoap": "https://github.com/ainehanta/handsoap/archive/0.0.1.tar.gz",
     "moment": "^2.19.3",
     "uuid": "^3.1.0"
   },
