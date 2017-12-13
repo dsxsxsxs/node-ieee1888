@@ -25,7 +25,7 @@ to bundle it as a stand alone module.
 
 const ieee1888 = require('ieee1888')
 const moment = ieee1888.moment
-const client = new ieee1888.Client('http://sample.org/axis2/services/FIAPStorage?wsdl')
+const client = new ieee1888.Client('http://sample.org/axis2/services/FIAPStorage')
 
 // callback
 client.write([
