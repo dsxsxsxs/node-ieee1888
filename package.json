@@ -1,6 +1,6 @@
 {
   "name": "ieee1888",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "A node module for IEEE1888 protocol",
   "license": "MIT",
   "engines": {
